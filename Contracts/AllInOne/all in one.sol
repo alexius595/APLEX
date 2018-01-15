@@ -203,6 +203,8 @@ contract Ownable {
   }
  
  
+  
+  
   function Ownable() public {
     _owner = msg.sender;
   }
@@ -233,21 +235,37 @@ contract WithVersionSelector
     
 }
 
-contract TokenWithSaleAgent is Ownable, WithVersionSelector {
+contract WithSaleAgent is Ownable, WithVersionSelector {
     
      address internal saleAgent;
      
-     function TokenWithSaleAgent(address _selector) WithVersionSelector(_selector) public {
+     function WithSaleAgent(address _selector) WithVersionSelector(_selector) public {
      
      }
     
-     modifier isSaleAgentOrOwner {
+    /* modifier isSaleAgentOrOwner {
          require(address(selector)!=0x0 || msg.sender==owner());
          require(saleAgent != 0x0 || msg.sender==owner());
          require(VersionSelector(selector).getCurSaleAgentAddress() == msg.sender || msg.sender==owner()); //проверяем установлен ли saleAgent в VersionSelector 
          //Можно ещё проверку текущего адреса токена в version selector проверить, но по идее это не здесь
          require(msg.sender == saleAgent || msg.sender==owner());
          _;
+     }*/
+     
+     modifier isSaleAgentOrOwner {
+         if (msg.sender == owner())
+         {
+            _;
+         }
+         else
+         {
+             require(address(selector)!=0x0 );
+             require(saleAgent != 0x0 );
+             require(VersionSelector(selector).getCurSaleAgentAddress() == msg.sender ); //проверяем установлен ли saleAgent в VersionSelector 
+             //Можно ещё проверку текущего адреса токена в version selector проверить, но по идее это не здесь
+             require(msg.sender == saleAgent);
+             _;
+         }
      }
      
      function setSaleAgent(address newAgent) public onlyOwner returns(bool res) {
@@ -255,26 +273,52 @@ contract TokenWithSaleAgent is Ownable, WithVersionSelector {
          res = saleAgent == newAgent;
      }
      
+     
+    function getAgent() public view returns (address agent)
+    {
+        return saleAgent;
+    }
+    
+    function transferFromOwner(address _to, uint _value) public isSaleAgentOrOwner returns (bool);
+    
 }
 
 
-contract SimpleAPXToken is BurnableToken, TokenWithSaleAgent {
 
-    string public constant NAME = "Aplex Coin Token";
+contract APLXToken is BurnableToken, WithSaleAgent {
 
-    string public constant SYMBOL = "APX";
+    string public constant name = "Aplex Token";
 
-    uint32 public constant DECIMALS = 18;
+    string public constant symbol = "APLX";
 
-   function SimpleAPXToken(address _selector) TokenWithSaleAgent(_selector)  public {
-        totalSupply = INITIAL_SUPPLY;
-        balances[msg.sender] = INITIAL_SUPPLY;
+    //пока решение не принято преношу в конструктор
+    //uint32 public constant decimals = 18;
+    
+    uint8 public decimals;
+    
+    uint256 public initial_supply = 100000 * 1 ether;
+
+   function APLXToken(address _selector, uint8 dec) WithSaleAgent(_selector)  public {
+        totalSupply = initial_supply;
+        balances[msg.sender] = initial_supply;
+        decimals=dec;
     }
 
-    function getMyAddress() public view returns(address my)
-    {
-        my = address(this);
-    }
+   function getAccountInvestment(address _investor) public view returns(uint curEther)
+   {
+        uint tokens=balances[_investor];
+        if (tokens==0 )
+            return 0;
+        
+         require(address(selector)!=0x0);
+         require(saleAgent != 0x0);
+         require(VersionSelector(selector).getCurSaleAgentAddress() == getAgent());
+        
+        //при вычислении таким образом возвращается значение с бонусами, ну можно назвать это бонус за владение токенами
+        //в реальности могло быть потрачено меньше (выход  - хранить реальные цифры затрат или струтктуру реал, добавлено)
+        curEther = tokens.div(Sale(getAgent()).rate()); //пока без учета decimals
+        
+   }
 
    /* modifier onlyOwnerOrContractsWithSameOwner() {
         uint codeLength;
@@ -291,27 +335,16 @@ contract SimpleAPXToken is BurnableToken, TokenWithSaleAgent {
         require(msg.sender == owner() || (codeLength > 0 && address(sender) != 0x0 && sender.owner() == owner()));
         _;
     }*/
-
     
-    function getAgent() public view returns (address agent)
-    {
-        return saleAgent;
-    }
-
-    uint256 public INITIAL_SUPPLY = 100000 * 1 ether;
+    
     
     function transferFromOwner(address _to, uint _value) public isSaleAgentOrOwner returns (bool) {
         require(_to != address(0));
-
-   
-
-    address _from=owner();
-
-    balances[_from] = balances[_from].sub(_value);
-    balances[_to] = balances[_to].add(_value);
-   
-    Transfer(_from, _to, _value);
-    return true;
+        address _from=owner();
+        balances[_from] = balances[_from].sub(_value);
+        balances[_to] = balances[_to].add(_value);
+        Transfer(_from, _to, _value);
+        return true;
     }
     
    
@@ -328,13 +361,14 @@ contract SimpleAPXToken is BurnableToken, TokenWithSaleAgent {
 
 contract VersionSelector is Ownable {
 
-    TokenWithSaleAgent private curTokenAddress;
+    WithSaleAgent private curTokenAddress;
     address private curMarketAddress;
     address private curSaleAgentAddress;
+    uint8 dec;
     
 
-    function VersionSelector() public {
-        
+    function VersionSelector(uint8 tokenDec) public {
+        dec=tokenDec;
     }
 
     function setCurMarketAddress(address _newaddr) public onlyOwner {
@@ -348,7 +382,7 @@ contract VersionSelector is Ownable {
         //Хотя проверку проходит, значение записывает
         //Ownable ow=Ownable(_newaddr);
         //require(ow.owner()==address(this));
-        curTokenAddress = TokenWithSaleAgent(_newaddr);
+        curTokenAddress = WithSaleAgent(_newaddr);
         
     }
     
@@ -367,7 +401,7 @@ contract VersionSelector is Ownable {
     }
     
     
-    function getCurTokenAddress() public view returns (TokenWithSaleAgent addr) 
+    function getCurTokenAddress() public view returns (WithSaleAgent addr) 
     {
         addr = curTokenAddress;
     }
@@ -410,8 +444,8 @@ contract VersionSelector is Ownable {
         return 0x0;
     }
     
-     function CreateApxToken() public onlyOwner returns (address) {
-               address token=address(new SimpleAPXToken(address(this)));
+     function CreateAPLXToken() public onlyOwner returns (address) {
+               address token=address(new APLXToken(address(this), dec));
                setCurTokenAddress(token);
                return token;
     }
@@ -430,8 +464,8 @@ contract Sale is Ownable, WithVersionSelector {
     uint restrictedPercent;
 
     address restricted;
-
-    SimpleAPXToken public token;
+    
+    WithSaleAgent public token;
     
     function buyTokens() public saleIsOn payable;
 
@@ -443,7 +477,7 @@ contract Sale is Ownable, WithVersionSelector {
     
     function Sale(address _versionSelectorAddress) WithVersionSelector(_versionSelectorAddress) public {
         //получаем адрес токена от селектора
-        token = SimpleAPXToken(VersionSelector(_versionSelectorAddress).getCurTokenAddress());//token=new SimpleAPXToken()
+        token = WithSaleAgent(VersionSelector(_versionSelectorAddress).getCurTokenAddress());//token=new SimpleAPXToken()
         require(address(token) != 0x0);
        
         
@@ -459,6 +493,7 @@ contract Sale is Ownable, WithVersionSelector {
     }
 
     modifier saleIsOn() {
+        //@Lavrentiy Tsvetkov - насколько стоит заморачиваться по проблеме now? (зависит от времени у майнера текущего блока)
         require(now > start && now < start + period * 1 days);
         _;
     }
@@ -483,16 +518,19 @@ contract PreSale is Sale {
    uint presaleBonusPercent=40;
 
     function buyTokens() public saleIsOn payable {
-        multisig.transfer(msg.value);
-        uint tokens = rate.mul(msg.value).div(1 ether);
+          multisig.transfer(msg.value);
+        
+        
+        // надо ещё раз с минимальным вложением проверить, чтобы не получлось перевода  эфира,  а купили ноль токенов
+        uint tokens = rate.mul(msg.value);
         
         uint bonus;
-        bonus = tokens.div(100).mul(presaleBonusPercent);
+        bonus = tokens.mul(presaleBonusPercent).div(100);
          
         uint bonused = tokens.add(bonus);
         token.transferFromOwner(msg.sender, bonused);
        
-        uint restrictedTokens = tokens.mul(restrictedPercent).div(100);
+        uint restrictedTokens = bonused.mul(restrictedPercent).div(100);
         token.transferFromOwner(restricted, restrictedTokens);
 
     }
@@ -513,45 +551,74 @@ contract MainSale is Sale {
    
 
     function buyTokens() public saleIsOn payable {
+     
         multisig.transfer(msg.value);
         
+        
         // надо ещё раз с минимальным вложением проверить, чтобы не получлось перевода  эфира,  а купили ноль токенов
-        uint tokens = rate.mul(msg.value).div(1 ether);
+        uint tokens = rate.mul(msg.value);
        
        
        /* Новые условия бонусов*/
-      // Пока только по количеству
-        uint bonus;
+       //  не претендую на истину в числах. М
+        uint qbonus=0;
         
-        if (msg.value.mul(10).div(1 ether) > 0)
+       //думаю надо учитывать предыдущие платежи  аккаунта
+        uint invested=msg.value.add(APLXToken(token).getAccountInvestment(msg.sender));
+        
+        if (invested > 1 ether)
         {
-            bonus = tokens.div(100).mul(5); //если потратили более 1 эфир/10, то + 5%
+            qbonus = tokens.div(20); //если потратили более 1 эфир, то + 5%
         }
         
-        if (msg.value.div(1 ether) > 0)
+        if (invested > 10 ether)
         {
-            bonus = tokens.div(10); //если потратили более 1 эфир, то + 10%
+            qbonus = tokens.div(10);//если потратили более 10 эфир, то + 10%
         }
         
-        if (msg.value.div(1 ether) > 10)
+        if (invested > 100 ether)
         {
-            bonus = tokens.div(100).mul(15); //если потратили более 10 эфир, то + 15%
+            qbonus =  tokens.mul(15).div(100); //если потратили более 100 эфир, то + 15%
         }
         
-        if (msg.value.div(1 ether) > 100)
+        if (invested > 1000 ether)
         {
-            bonus = tokens.div(4); //если потратили более 100 эфир, то + 20%
+            qbonus = tokens.div(5); //если потратили более 1000 эфир, то + 20%
         }
         
-        if (msg.value.div(1 ether) > 1000)
+        uint tbonus=0; 
+        
+        
+        
+        
+        if (now.sub(start) < 3 weeks)
         {
-            bonus = tokens.div(4); //если потратили более 1000 эфир, то + 25%
+            tbonus=tokens.div(20); //если 3 неделя, то 5%
         }
-         
-        uint bonused = tokens.add(bonus);
+        
+        
+        if (now.sub(start) < 2 weeks)
+        {
+            tbonus=tokens.div(10); //если 2 неделя, то 10%
+        }
+        
+        
+        if (now.sub(start) < 1 weeks)
+        {
+            tbonus=tokens.mul(15).div(100); //если 1 неделя, то 15%
+        }
+        
+        
+        if (now.sub(start) < 1 days)
+        {
+            tbonus=tokens.div(5); //если 1 день, то 20%
+        }
+        
+        
+        uint bonused = tokens.add(qbonus).add(tbonus);
         token.transferFromOwner(msg.sender, bonused);
        
-        uint restrictedTokens = tokens.mul(restrictedPercent).div(100);
+        uint restrictedTokens = bonused.mul(restrictedPercent).div(100);
         token.transferFromOwner(restricted, restrictedTokens);
 
     }
