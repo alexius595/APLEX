@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+п»їpragma solidity ^0.4.18;
 
 library SafeMath {
   function mul(uint256 a, uint256 b) internal pure returns (uint256) {
@@ -244,8 +244,8 @@ contract TokenWithSaleAgent is Ownable, WithVersionSelector {
      modifier isSaleAgentOrOwner {
          require(address(selector)!=0x0 || msg.sender==owner());
          require(saleAgent != 0x0 || msg.sender==owner());
-         require(VersionSelector(selector).getCurSaleAgentAddress() == msg.sender || msg.sender==owner()); //проверяем установлен ли saleAgent в VersionSelector 
-         //Можно ещё проверку текущего адреса токена в version selector проверить, но по идее это не здесь
+         require(VersionSelector(selector).getCurSaleAgentAddress() == msg.sender || msg.sender==owner()); //РїСЂРѕРІРµСЂСЏРµРј СѓСЃС‚Р°РЅРѕРІР»РµРЅ Р»Рё saleAgent РІ VersionSelector 
+         //РњРѕР¶РЅРѕ РµС‰С‘ РїСЂРѕРІРµСЂРєСѓ С‚РµРєСѓС‰РµРіРѕ Р°РґСЂРµСЃР° С‚РѕРєРµРЅР° РІ version selector РїСЂРѕРІРµСЂРёС‚СЊ, РЅРѕ РїРѕ РёРґРµРµ СЌС‚Рѕ РЅРµ Р·РґРµСЃСЊ
          require(msg.sender == saleAgent || msg.sender==owner());
          _;
      }
@@ -321,9 +321,9 @@ contract SimpleAPXToken is BurnableToken, TokenWithSaleAgent {
 
 
 /**
-* Менять контракты нельзя,но выпускать новые версии можно
-* Сайты, приложения, сервисы начинают общаться сетью блокчейна
-* с получения адресов актуальных контрактов
+* РњРµРЅСЏС‚СЊ РєРѕРЅС‚СЂР°РєС‚С‹ РЅРµР»СЊР·СЏ,РЅРѕ РІС‹РїСѓСЃРєР°С‚СЊ РЅРѕРІС‹Рµ РІРµСЂСЃРёРё РјРѕР¶РЅРѕ
+* РЎР°Р№С‚С‹, РїСЂРёР»РѕР¶РµРЅРёСЏ, СЃРµСЂРІРёСЃС‹ РЅР°С‡РёРЅР°СЋС‚ РѕР±С‰Р°С‚СЊСЃСЏ СЃРµС‚СЊСЋ Р±Р»РѕРєС‡РµР№РЅР°
+* СЃ РїРѕР»СѓС‡РµРЅРёСЏ Р°РґСЂРµСЃРѕРІ Р°РєС‚СѓР°Р»СЊРЅС‹С… РєРѕРЅС‚СЂР°РєС‚РѕРІ
 */
 
 contract VersionSelector is Ownable {
@@ -344,8 +344,8 @@ contract VersionSelector is Ownable {
 
     function setCurTokenAddress(address _newaddr) public onlyOwner {
         require(_newaddr != 0);
-        //Почему-то, если вставляю такую проверку, то не могу загрузить SimpleAPXToken at address
-        //Хотя проверку проходит, значение записывает
+        //РџРѕС‡РµРјСѓ-С‚Рѕ, РµСЃР»Рё РІСЃС‚Р°РІР»СЏСЋ С‚Р°РєСѓСЋ РїСЂРѕРІРµСЂРєСѓ, С‚Рѕ РЅРµ РјРѕРіСѓ Р·Р°РіСЂСѓР·РёС‚СЊ SimpleAPXToken at address
+        //РҐРѕС‚СЏ РїСЂРѕРІРµСЂРєСѓ РїСЂРѕС…РѕРґРёС‚, Р·РЅР°С‡РµРЅРёРµ Р·Р°РїРёСЃС‹РІР°РµС‚
         //Ownable ow=Ownable(_newaddr);
         //require(ow.owner()==address(this));
         curTokenAddress = TokenWithSaleAgent(_newaddr);
@@ -379,9 +379,9 @@ contract VersionSelector is Ownable {
     
     
     
-    //Функции Create**** сделаны для удобства отладки и позволяют сразу становится 
-    // владельцем создаваемых контрактов. При необходимости создания новой версии извне
-    // нужно будет вызывать высталять агента продажи в токене а потом вызывать tranferownership(адрес VS) у регистрируемого контракта 
+    //Р¤СѓРЅРєС†РёРё Create**** СЃРґРµР»Р°РЅС‹ РґР»СЏ СѓРґРѕР±СЃС‚РІР° РѕС‚Р»Р°РґРєРё Рё РїРѕР·РІРѕР»СЏСЋС‚ СЃСЂР°Р·Сѓ СЃС‚Р°РЅРѕРІРёС‚СЃСЏ 
+    // РІР»Р°РґРµР»СЊС†РµРј СЃРѕР·РґР°РІР°РµРјС‹С… РєРѕРЅС‚СЂР°РєС‚РѕРІ. РџСЂРё РЅРµРѕР±С…РѕРґРёРјРѕСЃС‚Рё СЃРѕР·РґР°РЅРёСЏ РЅРѕРІРѕР№ РІРµСЂСЃРёРё РёР·РІРЅРµ
+    // РЅСѓР¶РЅРѕ Р±СѓРґРµС‚ РІС‹Р·С‹РІР°С‚СЊ РІС‹СЃС‚Р°Р»СЏС‚СЊ Р°РіРµРЅС‚Р° РїСЂРѕРґР°Р¶Рё РІ С‚РѕРєРµРЅРµ Р° РїРѕС‚РѕРј РІС‹Р·С‹РІР°С‚СЊ tranferownership(Р°РґСЂРµСЃ VS) Сѓ СЂРµРіРёСЃС‚СЂРёСЂСѓРµРјРѕРіРѕ РєРѕРЅС‚СЂР°РєС‚Р° 
     
     function CreatePresale() public onlyOwner returns (address) {
         require(address(curTokenAddress) != 0x0);
@@ -442,7 +442,7 @@ contract Sale is Ownable, WithVersionSelector {
     uint public rate;
     
     function Sale(address _versionSelectorAddress) WithVersionSelector(_versionSelectorAddress) public {
-        //получаем адрес токена от селектора
+        //РїРѕР»СѓС‡Р°РµРј Р°РґСЂРµСЃ С‚РѕРєРµРЅР° РѕС‚ СЃРµР»РµРєС‚РѕСЂР°
         token = SimpleAPXToken(VersionSelector(_versionSelectorAddress).getCurTokenAddress());//token=new SimpleAPXToken()
         require(address(token) != 0x0);
        
@@ -515,37 +515,37 @@ contract MainSale is Sale {
     function buyTokens() public saleIsOn payable {
         multisig.transfer(msg.value);
         
-        // надо ещё раз с минимальным вложением проверить, чтобы не получлось перевода  эфира,  а купили ноль токенов
+        // РЅР°РґРѕ РµС‰С‘ СЂР°Р· СЃ РјРёРЅРёРјР°Р»СЊРЅС‹Рј РІР»РѕР¶РµРЅРёРµРј РїСЂРѕРІРµСЂРёС‚СЊ, С‡С‚РѕР±С‹ РЅРµ РїРѕР»СѓС‡Р»РѕСЃСЊ РїРµСЂРµРІРѕРґР°  СЌС„РёСЂР°,  Р° РєСѓРїРёР»Рё РЅРѕР»СЊ С‚РѕРєРµРЅРѕРІ
         uint tokens = rate.mul(msg.value).div(1 ether);
        
        
-       /* Новые условия бонусов*/
-      // Пока только по количеству
+       /* РќРѕРІС‹Рµ СѓСЃР»РѕРІРёСЏ Р±РѕРЅСѓСЃРѕРІ*/
+      // РџРѕРєР° С‚РѕР»СЊРєРѕ РїРѕ РєРѕР»РёС‡РµСЃС‚РІСѓ
         uint bonus;
         
         if (msg.value.mul(10).div(1 ether) > 0)
         {
-            bonus = tokens.div(100).mul(5); //если потратили более 1 эфир/10, то + 5%
+            bonus = tokens.div(100).mul(5); //РµСЃР»Рё РїРѕС‚СЂР°С‚РёР»Рё Р±РѕР»РµРµ 1 СЌС„РёСЂ/10, С‚Рѕ + 5%
         }
         
         if (msg.value.div(1 ether) > 0)
         {
-            bonus = tokens.div(10); //если потратили более 1 эфир, то + 10%
+            bonus = tokens.div(10); //РµСЃР»Рё РїРѕС‚СЂР°С‚РёР»Рё Р±РѕР»РµРµ 1 СЌС„РёСЂ, С‚Рѕ + 10%
         }
         
         if (msg.value.div(1 ether) > 10)
         {
-            bonus = tokens.div(100).mul(15); //если потратили более 10 эфир, то + 15%
+            bonus = tokens.div(100).mul(15); //РµСЃР»Рё РїРѕС‚СЂР°С‚РёР»Рё Р±РѕР»РµРµ 10 СЌС„РёСЂ, С‚Рѕ + 15%
         }
         
         if (msg.value.div(1 ether) > 100)
         {
-            bonus = tokens.div(4); //если потратили более 100 эфир, то + 20%
+            bonus = tokens.div(4); //РµСЃР»Рё РїРѕС‚СЂР°С‚РёР»Рё Р±РѕР»РµРµ 100 СЌС„РёСЂ, С‚Рѕ + 20%
         }
         
         if (msg.value.div(1 ether) > 1000)
         {
-            bonus = tokens.div(4); //если потратили более 1000 эфир, то + 25%
+            bonus = tokens.div(4); //РµСЃР»Рё РїРѕС‚СЂР°С‚РёР»Рё Р±РѕР»РµРµ 1000 СЌС„РёСЂ, С‚Рѕ + 25%
         }
          
         uint bonused = tokens.add(bonus);
